@@ -26,6 +26,7 @@ export const authOptions: NextAuthOptions = {
                                   {username: credentials.identifier },
                         ]
                     })
+                    console.log(user)   
                     if(!user)
                     {
                         throw new Error('No user found')
@@ -89,3 +90,6 @@ export const authOptions: NextAuthOptions = {
     secret:process.env.NEXT_AUTH_SECRET
 
 }
+
+
+ 
