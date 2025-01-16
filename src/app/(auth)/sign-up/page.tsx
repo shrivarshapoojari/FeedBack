@@ -1,11 +1,10 @@
-'use client';
+ 'use client';
 
 import { ApiResponse } from '@/types/ApiResponse';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useDebounce } from 'use-debounce';
 import * as z from 'zod';
 
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,6 @@ export default function SignUpForm() {
   const [usernameMessage, setUsernameMessage] = useState('');
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const debouncedUsername = useDebounce(username, 300);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -42,28 +40,38 @@ export default function SignUpForm() {
     },
   });
 
+  // Custom debounce logic
   useEffect(() => {
-    const checkUsernameUnique = async () => {
-      if (debouncedUsername) {
-        setIsCheckingUsername(true);
-        setUsernameMessage(''); // Reset message
-        try {
-          const response = await axios.get<ApiResponse>(
-            `/api/check-username-unique?username=${debouncedUsername}`
-          );
-          setUsernameMessage(response.data.message);
-        } catch (error) {
-          const axiosError = error as AxiosError<ApiResponse>;
-          setUsernameMessage(
-            axiosError.response?.data.message ?? 'Error checking username'
-          );
-        } finally {
-          setIsCheckingUsername(false);
-        }
+    const handler = setTimeout(() => {
+      if (username) {
+        checkUsernameUnique(username);
       }
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
     };
-    checkUsernameUnique();
-  }, [debouncedUsername]);
+  }, [username]);
+
+  const checkUsernameUnique = async (debouncedUsername: string) => {
+    setIsCheckingUsername(true);
+    setUsernameMessage('');
+    console.log('Checking username:', debouncedUsername);
+    try {
+      const response = await axios.get<ApiResponse>(
+        `/api/check-username-unique?username=${debouncedUsername}`
+      );
+
+      setUsernameMessage(response.data.message);
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse>;
+      setUsernameMessage(
+        axiosError.response?.data.message ?? 'Error checking username'
+      );
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
 
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
     setIsSubmitting(true);
@@ -83,9 +91,9 @@ export default function SignUpForm() {
 
       const axiosError = error as AxiosError<ApiResponse>;
 
-      // Default error message
-      let errorMessage = axiosError.response?.data.message;
-      ('There was a problem with your sign-up. Please try again.');
+      let errorMessage =
+        axiosError.response?.data.message ??
+        'There was a problem with your sign-up. Please try again.';
 
       toast({
         title: 'Sign Up Failed',
@@ -102,7 +110,7 @@ export default function SignUpForm() {
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
         <div className="text-center">
           <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">
-            Join True Feedback
+            Join Feedback
           </h1>
           <p className="mb-4">Sign up to start your anonymous adventure</p>
         </div>
@@ -125,7 +133,7 @@ export default function SignUpForm() {
                   {!isCheckingUsername && usernameMessage && (
                     <p
                       className={`text-sm ${
-                        usernameMessage === 'Username is unique'
+                        usernameMessage === 'Username is available'
                           ? 'text-green-500'
                           : 'text-red-500'
                       }`}
@@ -144,7 +152,9 @@ export default function SignUpForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <Input {...field} name="email" />
-                  <p className='text-muted text-gray-400 text-sm'>We will send you a verification code</p>
+                  <p className="text-muted text-gray-400 text-sm">
+                    We will send you a verification code
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -161,7 +171,7 @@ export default function SignUpForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className='w-full' disabled={isSubmitting}>
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -35,10 +35,11 @@ export async function GET(request:Request)
             const queryParam={
                 username:searchParams.get("username")
             }
+            console.log("Backend",queryParam)
             const result=userNameQuerySchema.safeParse(queryParam)
-
+            console.log("Backend",result)
             if(!result.success)
-            {
+            {     
                 
 
                 return Response.json({
